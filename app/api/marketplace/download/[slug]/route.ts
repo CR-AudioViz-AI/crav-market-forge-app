@@ -37,16 +37,49 @@ export async function GET(
       return new NextResponse('Forbidden', { status: 403 });
     }
 
-    const fileAbsPath = path.join(process.cwd(), 'storage', product.file_path);
+    // SECURITY: Validate file path to prevent directory traversal
+    const normalizedPath = path.normalize(product.file_path);
+    if (normalizedPath.includes('..') || path.isAbsolute(normalizedPath)) {
+      console.error('Invalid file path detected:', product.file_path);
+      return new NextResponse('Invalid file path', { status: 400 });
+    }
+
+    const fileAbsPath = path.join(process.cwd(), 'storage', normalizedPath);
 
     try {
+      // SECURITY: Check file stats before reading to enforce size limits
+      const stats = await fs.stat(fileAbsPath);
+      const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB limit
+
+      if (stats.size > MAX_FILE_SIZE) {
+        console.error(`File too large: ${stats.size} bytes for ${fileAbsPath}`);
+        return new NextResponse('File too large', { status: 413 });
+      }
+
       const fileData = await fs.readFile(fileAbsPath);
       const fileName = path.basename(fileAbsPath);
+      const fileExt = path.extname(fileName).toLowerCase();
+
+      // SECURITY: Set appropriate content type based on extension
+      const contentTypeMap: Record<string, string> = {
+        '.pdf': 'application/pdf',
+        '.epub': 'application/epub+zip',
+        '.zip': 'application/zip',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.txt': 'text/plain',
+        '.md': 'text/markdown',
+      };
+
+      const contentType = contentTypeMap[fileExt] || 'application/octet-stream';
 
       return new NextResponse(fileData, {
         headers: {
-          'Content-Type': 'application/octet-stream',
+          'Content-Type': contentType,
           'Content-Disposition': `attachment; filename="${encodeURIComponent(fileName)}"`,
+          'X-Content-Type-Options': 'nosniff',
+          'Cache-Control': 'private, max-age=3600',
         },
       });
     } catch (fileError) {
