@@ -5,6 +5,7 @@ import { userHasProductAccess } from '@/lib/marketplace/access';
 import { notFound } from 'next/navigation';
 import fs from 'fs/promises';
 import path from 'path';
+import { getErrorMessage, logError, formatApiError } from '@/lib/utils/error-utils';
 
 export async function GET(
   _request: Request,
@@ -86,8 +87,8 @@ export async function GET(
       console.error('File read error:', fileError);
       return new NextResponse('File not found', { status: 404 });
     }
-  } catch (error) {
-    console.error('Download error:', error);
+  } catch (error: unknown) {
+    logError(\'Download error:\', error);
     return new NextResponse('Internal server error', { status: 500 });
   }
 }
