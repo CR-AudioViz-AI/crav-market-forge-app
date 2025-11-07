@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@16";
+import { getErrorMessage, logError, formatApiError } from '@/lib/utils/error-utils';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,7 +37,7 @@ Deno.serve(async (req: Request) => {
 
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Webhook signature verification failed:", err);
       return new Response(
         JSON.stringify({ error: `Webhook Error: ${err.message}` }),
@@ -181,8 +182,8 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ received: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error) {
-    console.error("Stripe webhook error:", error);
+  } catch (error: unknown) {
+    logError(\'Stripe webhook error:\', error);
     // Return 500 to trigger Stripe retry
     return new Response(
       JSON.stringify({ error: error.message || "Internal server error" }),
