@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { getErrorMessage, logError, formatApiError } from '@/lib/utils/error-utils';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -111,8 +112,8 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error) {
-    console.error("PayPal webhook error:", error);
+  } catch (error: unknown) {
+    logError(\'PayPal webhook error:\', error);
     return new Response(
       JSON.stringify({ error: error.message || "Internal server error" }),
       {
