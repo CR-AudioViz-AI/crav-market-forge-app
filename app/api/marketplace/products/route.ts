@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
+import { getErrorMessage, logError, formatApiError } from '@/lib/utils/error-utils';
 
 export async function POST(req: Request) {
   try {
@@ -43,8 +44,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, product });
-  } catch (error) {
-    console.error('Error creating product:', error);
+  } catch (error: unknown) {
+    logError(\'Error creating product:\', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
