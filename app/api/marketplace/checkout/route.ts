@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/supabase/server';
+import { getErrorMessage, logError, formatApiError } from '@/lib/utils/error-utils';
 
 export async function POST(req: Request) {
   try {
@@ -43,8 +44,8 @@ export async function POST(req: Request) {
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Checkout API error:', error);
+  } catch (error: unknown) {
+    logError(\'Checkout API error:\', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
