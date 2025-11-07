@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
+import { getErrorMessage, logError, formatApiError } from '@/lib/utils/error-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,8 +44,8 @@ export async function GET() {
         'Cache-Control': 'no-store, must-revalidate',
       },
     });
-  } catch (error) {
-    console.error('Health check failed:', error);
+  } catch (error: unknown) {
+    logError(\'Health check failed:\', error);
 
     return NextResponse.json(
       {
